@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "TableBook",
+    "slug": "tablebook-customer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "tablebook",
+    "android": {
+      "package": "com.tablebook.user"
+    }
+  }
+}

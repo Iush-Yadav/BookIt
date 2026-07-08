@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id
+  role             String
+  name             String
+  phone            String?
+  email            String
+  password_hash    String
+  claimed_venue_id String?
+  claim_status     String?
+  created_at       DateTime  @default(now())
+  bookings         Booking[]
+  claims           VenueClaim[]
+
+  @@unique([email, role])
+}
+
+model Venue {
+  id              String    @id
+  provider        String
+  provider_place_id String
+  name            String
+  address         String
+  area            String?
+  city            String
+  state           String
+  country         String
+  category        String
+  raw_provider_types Json
+  cuisines        Json
+  phone           String?
+  rating          Float?
+  price_level     String?
+  open_now        Boolean?
+  description     String?
+  images          Json
+  booking_mode    String
+  booking_status  String
+  layout_template_id String
+  data_provenance String
+  claims          VenueClaim[]
+  bookings        Booking[]
+  floors          Floor[]
+  zones           Zone[]
+  tables          RestaurantTable[]
+
+  @@unique([provider, provider_place_id])
+}
+
+model VenueClaim {
+  id           String   @id
+  host_user_id String
+  venue_id     String
+  status       String
+  rejection_reason String?
+  created_at   DateTime @default(now())
+  reviewed_at  DateTime?
+  host         User     @relation(fields: [host_user_id], references: [id])
+  venue        Venue    @relation(fields: [venue_id], references: [id])
+
+  @@unique([host_user_id, venue_id])
+}
+
+model Floor {
+  id         String @id
+  venue_id   String
+  name       String
+  sort_order Int
+  venue      Venue @relation(fields: [venue_id], references: [id])
+  zones      Zone[]
+  tables     RestaurantTable[]
+}
+
+model Zone {
+  id       String @id
+  venue_id String
+  floor_id String
+  name     String
+  venue    Venue @relation(fields: [venue_id], references: [id])
+  floor    Floor @relation(fields: [floor_id], references: [id])
+  tables   RestaurantTable[]
+}
+
+model RestaurantTable {
+  id        String @id
+  venue_id  String
+  floor_id  String
+  zone_id   String?
+  label     String
+  capacity  Int
+  pos_x     Float
+  pos_y     Float
+  shape     String
+  is_active Boolean @default(true)
+  source    String
+  venue     Venue @relation(fields: [venue_id], references: [id])
+  floor     Floor @relation(fields: [floor_id], references: [id])
+  zone      Zone? @relation(fields: [zone_id], references: [id])
+}
+
+model Booking {
+  id                  String   @id
+  venue_id            String
+  customer_user_id    String
+  customer_name       String
+  booking_type        String
+  party_size          Int
+  start_at            DateTime
+  duration_minutes    Int
+  requested_table_id  String?
+  assigned_table_id   String?
+  assignment_changed  Boolean  @default(false)
+  special_request     String?
+  decline_reason      String?
+  decline_note        String?
+  status              String
+  booking_fee         Int
+  payment_status      String
+  expires_at          DateTime
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+  venue               Venue    @relation(fields: [venue_id], references: [id])
+  customer            User     @relation(fields: [customer_user_id], references: [id])
+
+  @@index([venue_id, status, start_at])
+  @@index([customer_user_id, status])
+}
+
+model IdempotencyKey {
+  key        String   @id
+  response   Json
+  created_at DateTime @default(now())
+}
